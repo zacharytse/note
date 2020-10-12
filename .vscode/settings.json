@@ -1,0 +1,17 @@
+{
+    "openInExternalApp.openMapper": [
+
+    
+        {
+            "extensionName":"md",
+            "apps": [
+                {
+                    "isElectronApp": true,
+                    "title": "typora",
+                    "openCommand": "D:\\Typora\\bin\\typora.exe",
+                    
+                }
+            ]
+        }
+        ],
+}
