@@ -7,7 +7,7 @@ IOC的一个简单实现
 
 基本原理：通过xml文件，写入对象的相关信息(对象id，对象的包名以及该对象的属性)，然后读取该xml文件，并通过java反射技术构造出该对象，并将其保存到map中。接着某一个类只需要通过该对象id就可以获取到这个对象了
 
-```java
+```java{.line-numbers}
 //SimpleIOC.java
 //
 // Source code recreated from a .class file by IntelliJ IDEA
@@ -104,7 +104,7 @@ public class SimpleIOC {
 
 ```
 
-```java
+```java{.line-numbers}
 //Car.java
 //
 // Source code recreated from a .class file by IntelliJ IDEA
@@ -125,7 +125,7 @@ public class Car {
 }
 ```
 
-```java
+```java{.line-numbers}
 //Wheel.java
 //
 // Source code recreated from a .class file by IntelliJ IDEA
@@ -144,7 +144,7 @@ public class Wheel {
 
 ```
 
-```java
+```java{.line-numbers}
 //测试文件
 //
 // Source code recreated from a .class file by IntelliJ IDEA
@@ -173,7 +173,7 @@ public class Main {
 
 ```
 
-```xml
+```xml{.line-numbers}
 //ioc.xml 配置文件
 <beans>
     <bean id="wheel" class="com.titizz.simulation.toyspring.Wheel">
@@ -209,7 +209,7 @@ AOP基于代理模式实现
 
 总结：借助一个proxy对另一个对象的访问进行控制
 
-```java
+```java{.line-numbers}
 //Image.java
 package com.xcq.proxy;
 
@@ -219,7 +219,7 @@ public interface Image {
 
 ```
 
-```java
+```java{.line-numbers}
 //RealImage.java
 package com.xcq.proxy;
 
@@ -243,7 +243,7 @@ public class RealImage implements Image{
 
 ```
 
-```java
+```java{.line-numbers}
 //ProxyImage.java
 package com.xcq.proxy;
 
@@ -265,7 +265,7 @@ public class ProxyImage implements Image{
 
 ```
 
-```java
+```java{.line-numbers}
 //test
 public static void test_proxy(){
         Image image = new ProxyImage("test_10mb.jpg");
@@ -339,14 +339,14 @@ AOP代理(aop proxy)
 
 Hello和ProxyHello同时继承IHello的接口，ProxyHello接管Hello的控制权
 
-```java
+```java{.line-numbers}
 //public interface IHello.java
 public interface IHello {
     void sayHello(String str);
 }
 ```
 
-```java
+```java{.line-numbers}
 //实际业务类 Hello.java
 public class Hello implements IHello{
     @Override
@@ -356,7 +356,7 @@ public class Hello implements IHello{
 }
 ```
 
-```java
+```java{.line-numbers}
 //代理类，控制业务类的访问 ProxyHello.java
 public class ProxyHello implements IHello{
     private IHello hello;
@@ -375,7 +375,7 @@ public class ProxyHello implements IHello{
 }
 ```
 
-```java
+```java{.line-numbers}
 //通知类
 public class Logger {
     public static void start(){
@@ -388,7 +388,7 @@ public class Logger {
 }
 ```
 
-```java
+```java{.line-numbers}
 //测试代码
 public class Test {
     public static void main(String[] args) {
