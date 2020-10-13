@@ -2,7 +2,7 @@
 #做决策的对象
 每一个device
 #决策所需要的输入
-其他所有device的位置以及device的ip，作为key-value输入(应该由服务器提供)
+其他所有device的位置以及device的ip，选择该device作为offloading target的device的数量，device的时钟频率
 #算法步骤
 1. 初始化
   1.1 每一个device选择离自己最近的device作为offloading的target
