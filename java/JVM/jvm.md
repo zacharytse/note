@@ -1,12 +1,20 @@
 [TOC]
 #ClassLoader
+##作用
+加载Class,负责将Class的字节码形式转换成内存形式的Class对象。字节码可以来自磁盘文件*.class,也可以是jar包里的*.class，也可以是来自远程服务器提供的字节流。字节码的本质是一个字节数组[]byte
+![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9tbWJpei5xcGljLmNuL21tYml6X2pwZy9jV2VYMmlibEx2aWFHbmJDRHRVemVkYUFYZHZ4Y0s4TXlod1pJTUQ0aWNLWkY4Zk1vNGNwT2VVZjFsQnNMd1BiQnkzTGNkZ2lhYlFVVUpVRXJPb28wUE5Wc2cvNjQw?x-oss-process=image/format,png)
 java自带了3个类加载器，分别如下
 - BootstrapClassLoader
 最顶层的加载类，主要加载核心类库，%JRE_HOME%\lib下的rt.jar、resources.jar、charsets.jar和class等。
 - ExtentionClassLoader 
-扩展的类加载器，加载目录%JRE_HOME%\lib\ext目录下的jar包和class文件
+扩展的类加载器，加载目录%JRE_HOME%\lib\ext目录下的jar包和class文件，比如swing,js,xml解析器等等
 - AppclassLoader
-也称为SystemAppClass,用于加载当前应用的classpath的所有类
+也称为SystemAppClass,用于加载当前应用的**classpath**的所有类，即加载用户自定义的类
+#延迟加载
+JVM运行时不会一次性加载全部的类，在遇到不认识的新类时，会调用ClassLoader加载这些类，加载完成后，就会将Class对象存在ClassLoader中。
+比如调用某个类的静态方法时，类肯定时需要被加载的，但是实例字段是不需要被加载的，只有在创建这个类的实例时，才需要加载这些字段(把这些字段从字节码的形式加载成内存中的class形式)
+网络上静态文件服务器提供的jar包和class文件，jdk内置了一个URLClassLoader，用户只需要指定url给构造器，就可以使用URLClassLoader来加载远程类库。
+AppClassLoader可以由ClassLoader类提供的静态方法getSystemClassLoader()得到，即系统类加载器。
 ##加载顺序
 1. BootstrapClassLoader
 2. ExtentionClassLoader
@@ -97,3 +105,18 @@ private static synchronized void initSystemClassLoader() {
 }
 ```
 getParent()返回的是一个ClassLoader对象
+#Bootstrap ClassLoader是由C++编写
+其本身是虚拟即的一部分，不是一个java类。JVM启动时通过Bootstrap类加载器加载rt.jar等核心jar包中的class文件。
+#ClassLoader传递性
+虚拟机在选择ClassLoader时，会使用当前正在调用的方法所属的class对象中的ClassLoader来加载。
+比如虚拟机调度main方法时，此时是用户自定义的类，所以会使用AppClassLoader来加载这个类。
+而对于那些延迟加载的类来说，它们也只能由AppClassLoader来加载，这就是ClassLoader传递性
+#双亲委托
+![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9tbWJpei5xcGljLmNuL21tYml6X2pwZy9jV2VYMmlibEx2aWFHbmJDRHRVemVkYUFYZHZ4Y0s4TXloSXEwZnBENHNpYzFnV1Q4RkQzaWJjbkJOWExPaWFxSDExM1hmY3hZeHBVYmdhTzY0NHJJQk9oMktBLzY0MA?x-oss-process=image/format,png)
+AppClassLoader在加载一个未知的类名时，不会先查找Classpath,而是先委托ExtensionClassLoader来加载，而ExtensionClassLoader加载时，同样也不会立即搜寻ext路径，而是会先委托BootstrapClassLoader来加载。每一个ClassLoader对象内部都有一个parent属性指向它的父加载器。
+这里要注意，因为bootstrapClassLoader是由c编写的，获取不到引用，所以所有由bootstrapClassLoader加载的class，他们的ClassLoader字段都是null。同样的，ExtensionClassLoader的parent字段也是null
+#Class.forName
+经常会用它来加载驱动类
+```java
+Class.forName("com.mysql.cj.jdbc.Driver");
+```
