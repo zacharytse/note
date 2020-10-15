@@ -66,3 +66,4 @@ Entry<K,V> next = e.next;
 因为e本身是一个竞争变量，如果线程1在获取到e.next被挂起，而此时另一个线程完成了操作，线程1再接着执行，就会出现问题。
 如上图所示，线程1挂起，线程2执行完毕。此时e指向了Key:3,而next指向了7。但是7的next仍然是3，即产生了循环链表
 ![](https://coolshell.cn/wp-content/uploads/2013/05/HashMap03.jpg)
+1
