@@ -71,3 +71,10 @@ pair<double, double> randomPoint(double startlon, double startlat) {
 ####想要模拟得到的数据
 不同节点数量下的单个节点获得offloading决策结果的时间。
 不同节点数量下的单个节点获得最终结果的响应时间
+单个节点频繁发出请求，获得offloading决策结果的响应时间
+单个节点频繁发出请求，获得最终结果的响应时间
+所有节点都频繁发出请求，获得offloading决策结果的响应时间
+所有节点频繁发出请求，获得最终结果的响应时间
+##架构模型的考虑
+![](https://gitee.com/zacharytse/image/raw/master/img/framework.png)
+
