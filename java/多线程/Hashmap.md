@@ -55,7 +55,7 @@ void transfer(Entry[] newTable)
     }
 } 
 ```
-单线程下扩容，会先创建一个新的Node表，然后把原表迁移到新表中。每一个hash桶的元素重新hash，使用尾插(保证原来插入的相对顺序)到新的桶中。
+单线程下扩容，会先创建一个新的Node表，然后把原表迁移到新表中。每一个hash桶的元素重新hash，使用头插到新的桶中。
 ![](https://coolshell.cn/wp-content/uploads/2013/05/HashMap01.jpg)
 但在多线程下，这会出现问题
 ![](https://coolshell.cn/wp-content/uploads/2013/05/HashMap02.jpg)
