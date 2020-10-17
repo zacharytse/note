@@ -1,4 +1,89 @@
 [TOC]
+#java编译的过程
+![](https://gitee.com/zacharytse/image/raw/master/img/20201017145723.png)
+可以看到是由源代码经过词法分析器和语法分析器以及字节码生成器最后得到了JVM字节码
+##JVM字节码的执行
+字节码执行是由JVM引擎来完成的，流程图如下:
+![](https://gitee.com/zacharytse/image/raw/master/img/20201017145845.png)
+##Class文件的组成
+- 结构信息。
+  包括class文件格式版本号及各部分的数量与大小的信息
+- 元数据
+  对应于java源码中声明与常量的信息。包含类/继承的超类/实现的接口的声明信息、域与方法声明信息和常量池
+- 方法信息
+  对应于java源码中语句和表达式对应的信息。包含字节码，异常处理表，求值栈与局部变量区大小、求值栈的类型记录、调试符号信息
+```{.line-numbers}
+Classfile /E:/X.class
+  Last modified 2020-10-15; size 372 bytes
+  MD5 checksum be826009b32e9ba300ff43405c032137
+  Compiled from "X.java"
+public class X
+  minor version: 0
+  major version: 52
+  flags: ACC_PUBLIC, ACC_SUPER
+Constant pool:
+   #1 = Methodref          #4.#16         // java/lang/Object."<init>":()V
+   #2 = Methodref          #3.#17         // X.bar:()V
+   #3 = Class              #18            // X
+   #4 = Class              #19            // java/lang/Object
+   #5 = Utf8               <init>
+   #6 = Utf8               ()V
+   #7 = Utf8               Code
+   #8 = Utf8               LineNumberTable
+   #9 = Utf8               LocalVariableTable
+  #10 = Utf8               this
+  #11 = Utf8               LX;
+  #12 = Utf8               foo
+  #13 = Utf8               bar
+  #14 = Utf8               SourceFile
+  #15 = Utf8               X.java
+  #16 = NameAndType        #5:#6          // "<init>":()V
+  #17 = NameAndType        #13:#6         // bar:()V
+  #18 = Utf8               X
+  #19 = Utf8               java/lang/Object
+{
+  public X();
+    descriptor: ()V
+    flags: ACC_PUBLIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: return
+      LineNumberTable:
+        line 1: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0       5     0  this   LX;
+
+  public void foo();
+    descriptor: ()V
+    flags: ACC_PUBLIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: aload_0
+         1: invokevirtual #2                  // Method bar:()V
+         4: return
+      LineNumberTable:
+        line 3: 0
+        line 4: 4
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0       5     0  this   LX;
+
+  public void bar();
+    descriptor: ()V
+    flags: ACC_PUBLIC
+    Code:
+      stack=0, locals=1, args_size=1
+         0: return
+      LineNumberTable:
+        line 6: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0       1     0  this   LX;
+}
+```
 #ClassLoader
 ##作用
 加载Class,负责将Class的字节码形式转换成内存形式的Class对象。字节码可以来自磁盘文件*.class,也可以是jar包里的*.class，也可以是来自远程服务器提供的字节流。字节码的本质是一个字节数组[]byte
