@@ -120,3 +120,75 @@ AppClassLoader在加载一个未知的类名时，不会先查找Classpath,而�
 ```java
 Class.forName("com.mysql.cj.jdbc.Driver");
 ```
+因为mysql驱动里有一个静态代码块。静态代码块会在类被加载的时候执行，所以这个静态代码块在Class.forName加载Driver时被执行。这个静态代码块会将mysql驱动实例注册到全局的jdbc驱动管理器里
+```java{.line-numbers}
+class Driver {
+ static {
+    try {
+      java.sql.DriverManager.registerDriver(new Driver());
+    } catch (SQLException E) {
+      throw new RuntimeException("Can't register driver!");
+   }
+ }
+ ...
+}
+```
+forName方法也是根据调用者的ClassLoader来加载。但是也可以自己指定使用哪个ClassLoader
+```java{.line-numbers}
+Class<?> forName(String name, 
+        boolean initialize,
+        ClassLoader cl)
+```
+#自定义类加载器
+ClassLoader中的三个方法
+- loadClass()
+loadClass()是加载目标类的入口，首先会检查当前ClassLoader以及它的双亲是否已经加载了目标类，如果当前ClassLoader不能加载，则会让双亲尝试加载，如果双亲都不行，就会调用findClass()使用自定义的加载器来加载目标类
+- findClass()
+  是需要重写的
+- defineClass()
+
+```java{.line-numbers}
+//pesuecode
+class ClassLoader {
+ // 加载入口，定义了双亲委派规则
+ Class loadClass(String name) {
+ // 是否已经加载了
+ Class t = this.findFromLoaded(name);
+ if(t == null) {
+ // 交给双亲
+ t = this.parent.loadClass(name)
+ }
+ if(t == null) {
+ // 双亲都不行，只能靠自己了
+ t = this.findClass(name);
+ }
+ return t;
+ }
+ 
+ // 交给子类自己去实现
+ Class findClass(String name) {
+ throw ClassNotFoundException();
+ }
+ 
+ // 组装Class对象
+ Class defineClass(byte[] code, String name) {
+ return buildClassFromCode(code, name);
+ }
+}
+class CustomClassLoader extends ClassLoader {
+ Class findClass(String name) {
+ // 寻找字节码
+ byte[] code = findCodeFromSomewhere(name);
+ // 组装Class对象
+ return this.defineClass(code, name);
+ }
+}
+```
+不要随便覆盖loadClass()方法，否则会破坏原来默认加载内置的核心类库的功能。
+使用自定义加载器时，要明确好父加载器，如果设为null，则表明父加载器是根加载器(bootstrapClassLoader)
+```java{.line-numbers}
+// ClassLoader 构造器
+protected ClassLoader(String name, ClassLoader parent);
+```
+##Class.forName vs ClassLoader.loadClass
+它俩都能用来加载目标类
