@@ -77,4 +77,24 @@ pair<double, double> randomPoint(double startlon, double startlat) {
 所有节点频繁发出请求，获得最终结果的响应时间
 ##架构模型的考虑
 ![](https://gitee.com/zacharytse/image/raw/master/img/framework.png)
+##安全性
+加密的思路有两种
+- 对发送的数据本身进行加密
+这种方法最大的问题是在运算方计算数据时，还是需要进行解密，运算方获得该数据以及产生该数据的设备ip时，肯定会存在安全性问题
+- 对发送方的身份进行加密
+  这种感觉可以，如果运算方无法获取到加密方的身份，那么这些地理位置信息，即使被运算方拿到，也没有任何的意义
+**那么怎么对发送方进行身份的加密**
+通过设置一个网关来实现。
+网关需要承受的流量必然很大(放在云端实现)
+基站内所有的机器在连接到基站后，服务器都会为其分配一个唯一的token，并将这些token注册到网关的路由表中
+###具体流程
+MEC server注册到云上后，云服务器会发送一个公钥给MEC server
+初始化时，每一个device注册到基站后，MEC server会向device发送一个加密公钥
+1. MEC server返回给device的offloading结果是对应目标的token
+2. device将自己的数据和目标打包，发送到网关。
+3. 网关根据路由表，将数据包解密后转发到对应的device
+   - 网关将发送方和接受方的token以key,value的形式保存下来
+4. 目标device收到数据包后，完成运算后，将最后的结果(bool值)发送到网关中
+5. 网关根据第3步保存的key,value值查找转发的device的token，再根据路由表将结果进行转发
+![](https://gitee.com/zacharytse/image/raw/master/img/312.png)
 
