@@ -418,7 +418,356 @@ public class MybatisTest {
     }
 }
 ```
+**PreparedStatement对象的执行方法**
+- execute:它能执行crud中的任意一种语句。返回值是一个boolean，表示是否有结果集，有结果集是true，否则是truetrue
+- executeUpdate:它只能执行cud语句，查询语句无法执行。它的返回值是影响数据库记录的行数
+- executeQuery:它只能执行select语句，无法执行增删改。执行结果封装的结果集ResultSet对象
+mybatis dao执行过程源码分析
+![](https://gitee.com/zacharytse/image/raw/master/img/20201021141819.png)
+![](https://gitee.com/zacharytse/image/raw/master/img/20201021141830.png)
+![](https://gitee.com/zacharytse/image/raw/master/img/20201021141838.png)
+![](https://gitee.com/zacharytse/image/raw/master/img/20201021141848.png)
+![](https://gitee.com/zacharytse/image/raw/master/img/20201021141857.png)
 #mybatis配置
 ##properties标签
+```xml{.line-numbers}
+<configuration>
+    <!--配置properties-->
+    <properties>
+        <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/mybatisdb?serverTimezone=UTC"/>
+        <property name="username" value="root"/>
+        <property name="password" value="xie2481"/>
+    </properties>
+    <!--配置环境-->
+    <environments default="mysql">
+        <!--配置id为mysql的环境-->
+        <environment id="mysql">
+            <!--表示事物的类型-->
+            <transactionManager type="JDBC"></transactionManager>
+            <!--配置数据源(连接池)-->
+            <dataSource type="POOLED">
+                <!--配置连接数据库的四个基本信息-->
+                <property name="driver" value="${driver}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${username}"/>
+                <property name="password" value="${password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+```
+引入外部配置文件
+```
+//jdbcConfig.properties
+jdbc.driver=com.mysql.cj.jdbc.Driver
+jdbc.url=jdbc:mysql://localhost:3306/mybatisdb?serverTimezone=UTC
+jdbc.username=root
+jdbc.password=xie2481
+```
+```xml{.line-numbers}
+<properties resource="jdbcConfig.properties">
+    </properties>
+    <!--配置环境-->
+    <environments default="mysql">
+        <!--配置id为mysql的环境-->
+        <environment id="mysql">
+            <!--表示事物的类型-->
+            <transactionManager type="JDBC"></transactionManager>
+            <!--配置数据源(连接池)-->
+            <dataSource type="POOLED">
+                <!--配置连接数据库的四个基本信息-->
+                <property name="driver" value="${jdbc.driver}"/>
+                <property name="url" value="${jdbc.url}"/>
+                <property name="username" value="${jdbc.username}"/>
+                <property name="password" value="${jdbc.password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+```
+url标签
+```xml{.line-numbers}
+ <properties url="file:///F:\javalearn\learn-spring\src\main\resources\jdbcConfig.properties">
+    </properties>
+    <!--配置环境-->
+    <environments default="mysql">
+        <!--配置id为mysql的环境-->
+        <environment id="mysql">
+            <!--表示事物的类型-->
+            <transactionManager type="JDBC"></transactionManager>
+            <!--配置数据源(连接池)-->
+            <dataSource type="POOLED">
+                <!--配置连接数据库的四个基本信息-->
+                <property name="driver" value="${jdbc.driver}"/>
+                <property name="url" value="${jdbc.url}"/>
+                <property name="username" value="${jdbc.username}"/>
+                <property name="password" value="${jdbc.password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+```
 ##typeAliases标签
+```xml{.line-numbers}
+<configuration>
+    <!--配置properties
+    可以在标签内部配置连接数据库的信息，也可以通过属性引用外部配置文件信息
+    resource属性，用于指定配置文件的位置，是按照类路径的写法，并且必须存在于类路径下-->
+    <!--使用typeAliases配置别名,它只能配置domain中类的别名-->
+    <typeAliases>
+        <!--typeAlias用于配置别名，type属性指定实体类全限定类名，alias属性指定别名，当
+        指定了别名就不再区分大小写-->
+        <typeAlias type="mybatis.domain.User" alias="user"></typeAlias>
+    </typeAliases>
+    <!--配置环境-->
+    <environments default="mysql">
+        <!--配置id为mysql的环境-->
+        <environment id="mysql">
+            <!--表示事物的类型-->
+            <transactionManager type="JDBC"></transactionManager>
+            <!--配置数据源(连接池)-->
+            <dataSource type="POOLED">
+                <!--配置连接数据库的四个基本信息-->
+                <property name="driver" value="${jdbc.driver}"/>
+                <property name="url" value="${jdbc.url}"/>
+                <property name="username" value="${jdbc.username}"/>
+                <property name="password" value="${jdbc.password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+```
+```xml{.line-numbers}
+ <!--用于指定要配置别名的包，当指定之后，该包下的实体类都会注册别名，并且类名就是别名，不再
+    区分大小写-->
+    <typeAliases>
+        <package name="mybatis.domain"/>
+    </typeAliases>
+```
 ##mappers标签
+```xml{.line-numbers}
+<mappers>
+        <!--package是用于指定dao接口所在的包，当指定完成之后，就不需要再写mapper以及resource
+        或者class-->
+        <package name="mybatis.dao"/>
+       <!-- <mapper resource="mybatis/dao/IUserDao.xml"/>-->
+        <!--<mapper class="mybatis.dao.IUserDao"/>-->
+    </mappers>
+```
+#mybatis连接池以及事务控制
+**连接池**
+在实际开发中都会使用连接池，因为它可以减少我们获取连接所消耗的时间。
+连接池就是用于存储连接的容器
+##mybatis连接池
+提供了3种方式的配置，配置的位置:
+主配置文件SqlMapConfig.xml的datasource标签，type属性就是表示采用何种连接池方式。
+
+**type属性取值**
+- POOLED
+采用javax.sql.DataSource规范中的连接池，mybatis中有针对规范的实现
+- UNPOOLED
+  采用传统的获取连接的方式，虽然也实现了javax.sql.DataSource接口，但是并没有使用池的思想
+- JNDI
+采用服务器提供的JNDI技术实现，来获取DataSource对象，不同的服务器所能拿到的DataSoruce是不一样的。要注意的是，如果不是web或者maven的war工程，是不能使用的。实际开发中使用的是tomcat服务器，采用的连接池就是dbcp连接池6  
+##连接池使用及分析
+- POOLED 
+  是从池中获取一个连接来用
+  ![](https://gitee.com/zacharytse/image/raw/master/img/mybatis_pooled的过程.png)
+- UNPOOLED
+  每次创建一个新的连接来用
+##事务控制的分析
+###什么是事务
+###事务的四大特性ACID
+###不考虑隔离会产生的3个问题
+###解决方法：四种隔离级别
+#mybatis基于xml配置的动态sql语句使用(会用)
+##mappers配置文件中的几个标签
+###\<if\>
+```xml{.line-numbers}
+<select id="findUserByCondition" resultType="user" parameterType="user">
+        select * from user where 1=1
+        <if test="username != null">
+           and username = #{username}
+        </if>
+</select>
+```
+###\<where\>
+```xml{.line-numbers}
+<select id="findUserByCondition" resultType="user" parameterType="user">
+        select * from user
+        <where>
+            <if test="username != null">
+                and username = #{username}
+            </if>
+            <if test="sex != null">
+                and sex = #{sex}
+            </if>
+        </where>
+</select>
+```
+###\<foreach\>
+```xml{.line-numbers}
+ <select id="findUserInIds" resultType="user" parameterType="QueryVo">
+        select * from user
+        <where>
+            <if test="ids != null and ids.size()>0">
+                <foreach collection="ids" open="and id in (" close=")" item="id" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+```
+###\<sql\>
+```xml{.line-numbers}
+<!--了解的内容，抽取重复的sql语句-->
+    <sql id="defaultUser">
+        select * from user;
+    </sql>
+    <select id="findAll" resultType="user">
+        <include refid="defaultUser"></include>
+    </select>
+```
+#mybatis多表操作(重要)
+##表之间的关系
+- 一对多
+  用户和订单之间是一对多
+- 多对一
+  订单和用户之间是一对多
+- 一对一
+  一个身份证只能属于一个人，一个人也只能有一个身份证
+- 多对多
+  一个学生可以被多个老师教过，一个老师可以教多个学生
+
+**特例**
+如果拿出**每一个**订单，他都只能属于一个用户，所以mybatis把多对一看成了一对一
+
+##实例
+用户和账户
+一个用户可以有多个账户
+一个账户只能属于一个用户(多个账户也可以属于同一个用户)
+
+**步骤**
+1. 建立两张表，一张用户表，一张账户表
+   让用户表和账户表之间具备一对多的关系，需要使用外键在账户表中添加
+2. 建立两个实体类，用户实体类和账户实体类
+   让用户和账户的实体类能体现出一对多的关系
+3. 建立两个配置文件
+   用户的配置文件
+   账户的配置文件
+4. 实现配置：
+   当我们查询用户时，可以同时得到用户下所包含的账户信息
+   当我们查询账户时，可以同时得到账户的所属用户信息
+首先建立IAccountDao的接口
+```java{.line-numbers}
+package com.xcq.dao;
+
+import com.xcq.domain.Account;
+import com.xcq.domain.AccountUser;
+
+import java.util.List;
+
+public interface IAccountDao {
+
+    /**
+     * 查询所有账户,同时还要获取到当前账户的所属用户信息
+     * @return
+     */
+    List<Account> findAll();
+
+    /**
+     * 查询所有账户，并且带有用户名称和地址信息
+     * @return
+     */
+    List<AccountUser> findAllAccount();
+}
+```
+IUserDao的接口如下
+```java{.line-numbers}
+package com.xcq.dao;
+import com.xcq.domain.User;
+
+import java.util.List;
+
+public class IUserDao {
+    /**
+     * 查询所有用户
+     * @return
+     */
+    List<User> findAll() {
+        return null;
+    }
+
+    /**
+     * 根据id查询用户信息
+     * @param userId
+     * @return
+     */
+    User findById(Integer userId) {
+        return null;
+    }
+}
+```
+两个接口对应的配置文件如下
+```xml{.line-numbers}
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcq.dao.IAccountDao">
+    <select id="findAll" resultType="account">
+        select * from account;
+    </select>
+
+    <!--查询所有账户同时包含用户名和地址信息-->
+    <select id="findAllAccount" resultType="accountuser">
+        select a.*,u.username,u.address from account a,user u where u.id = a.uid;
+    </select>
+</mapper>
+```
+```xml{.line-numbers}
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcq.dao.IUserDao">
+    <select id="findAll" resultType="user">
+        select * from user;
+    </select>
+
+    <!--根据id查询用户-->
+    <select id="findById" parameterType="int" resultType="user">
+        select * from user where id= #{id}
+    </select>
+
+</mapper>
+```
+测试程序如下
+```java{.line-numbers}
+ @Test
+    public void testFindAllAccountUser(){
+        List<AccountUser> aus = accountDao.findAllAccount();
+        for(AccountUser accountUser : aus){
+            System.out.println(accountUser);
+        }
+    }
+```
+**使用mybatis定义的一对多查询**
+```xml{.line-numbers}
+<resultMap id="accountUserMap" type="account">
+        <id property="id" column="aid"></id>
+        <result property="uid" column="uid"></result>
+        <result property="money" column="money"></result>
+        <!--一对一的关系映射，配置封装user的内容-->
+        <!--association中的column是对应的外键-->
+        <association property="user" column="uid" javaType="user">
+            <id property="id" column="id"></id>
+            <result column="username" property="username"></result>
+            <result column="address" property="address"></result>
+            <result column="sex" property="sex"></result>
+            <result column="birthday" property="birthday"></result>
+        </association>
+    </resultMap>
+
+    <select id="findAll" resultMap="accountUserMap">
+        select u.*,a.id as aid,a.uid,a.money from account a,user u where u.id = a.uid
+    </select>
+```
+看到p52
