@@ -1039,4 +1039,66 @@ public class User implements Serializable {
 #JDNI
 Java Naming And Directory Interface。目的是模仿windows系统中的注册表
 jndi是一个map结构，value是对应的对象，key存的是路径(directory)加名称(naming)。其中directory是固定的，name是自己指定的。要存放的对象也是可以指定的，是通过配置文件指定的
+在webapp目录下新建文件context.xml
+```xml{.line-numbers}
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+<!-- 
+<Resource 
+name="jdbc/eesy_mybatis"						数据源的名称
+type="javax.sql.DataSource"						数据源类型
+auth="Container"								数据源提供者
+maxActive="20"									最大活动数
+maxWait="10000"									最大等待时间
+maxIdle="5"										最大空闲数
+username="root"									用户名
+password="1234"									密码
+driverClassName="com.mysql.jdbc.Driver"			驱动类
+url="jdbc:mysql://localhost:3306/eesy_mybatis"	连接url字符串
+/>
+ -->
+<Resource 
+name="jdbc/eesy_mybatis"
+type="javax.sql.DataSource"
+auth="Container"
+maxActive="20"
+maxWait="10000"
+maxIdle="5"
+username="root"
+password="xie2481"
+driverClassName="com.mysql.jdbc.Driver"
+url="jdbc:mysql://localhost:3306/mybatisdb?serverTimezone=UTC"
+/>
+</Context>
+```
+总的配置文件如下
+```xml{.line-numbers}
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 导入约束 -->
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <typeAliases>
+        <package name="com.itheima.domain"></package>
+    </typeAliases>
+    <!-- 配置mybatis的环境 -->
+    <environments default="mysql">
+        <!-- 配置mysql的环境 -->
+        <environment id="mysql">
+            <!-- 配置事务控制的方式 -->
+            <transactionManager type="JDBC"></transactionManager>
+            <!-- 配置连接数据库的必备信息  type属性表示是否使用数据源（连接池）-->
+            <dataSource type="JNDI">
+                <property name="data_source" value="java:comp/env/jdbc/eesy_mybatis"/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <!-- 指定mapper配置文件的位置 -->
+    <mappers>
+        <mapper resource="com/itheima/dao/IUserDao.xml"/>
+    </mappers>
+</configuration>
+```
 从p60开始看
