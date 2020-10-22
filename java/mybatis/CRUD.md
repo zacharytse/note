@@ -770,4 +770,273 @@ public class IUserDao {
         select u.*,a.id as aid,a.uid,a.money from account a,user u where u.id = a.uid
     </select>
 ```
-看到p52
+**mybatis实现一对多的查询操作**
+```java{.line-numbers}
+package com.xcq.domain;
+
+import java.io.Serializable;
+
+public class Account implements Serializable {
+    private Integer id;
+    private Integer uid;
+    private Double money;
+
+    //从表实体应该包含一个主表实体的对象引用
+    private User user;
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getUid() {
+        return uid;
+    }
+
+    public void setUid(Integer uid) {
+        this.uid = uid;
+    }
+
+    public Double getMoney() {
+        return money;
+    }
+
+    public void setMoney(Double money) {
+        this.money = money;
+    }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "id=" + id +
+                ", uid=" + uid +
+                ", money=" + money +
+                '}';
+    }
+}
+```
+```xml{.line-numbers}
+ <resultMap id="userAccountMap" type="user">
+        <id property="id" column="id"></id>
+        <result property="username" column="username"></result>
+        <result property="address" column="address"></result>
+        <result property="sex" column="sex"></result>
+        <result property="birthday" column="birthday"></result>
+        <!--配置user对象中accounts集合的映射 ofType是集合中元素的类型-->
+        <collection property="accounts" ofType="account">
+            <id column="aid" property="id"></id>
+            <result column="uid" property="uid"></result>
+            <result column="money" property="money"></result>
+        </collection>
+    </resultMap>
+    <select id="findAll" resultMap="userAccountMap">
+        select * from user u left outer join account a on u.id = a.uid;
+    </select>
+```
+**实例2**
+用户和角色
+用户可以有多个角色
+一个角色也可以有多个用户
+**步骤**
+1. 建立两张表，一张用户表，一张角色表
+   让用户表和角色表具有多对多的关系，需要使用中间表，中间表中包含各自的主键，在中间表中是外键
+2. 建立两个实体类，用户实体类和角色实体类
+   让用户和角色的实体类能体现出多对多的关系
+   各自包含对方一个集合引用
+3. 建立两个配置文件
+   用户的配置文件
+   角色的配置文件
+4. 实现配置：
+   当我们查询用户时，可以同时得到用户下所包含的角色信息
+   当我们查询角色时，可以同时得到角色的所属用户信息
+**查询角色获取所属用户信息的实现**
+```java{.line-numbers}
+package com.xcq.domain;
+
+import java.io.Serializable;
+import java.util.List;
+
+public class Role implements Serializable {
+    private Integer roleId;
+    private String roleName;
+    private String roleDesc;
+
+    //多对多的关系映射,一个角色可以赋予多个用户
+    private List<User> users;
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
+    }
+
+    public Integer getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Integer roleId) {
+        this.roleId = roleId;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
+
+    public String getRoleDesc() {
+        return roleDesc;
+    }
+
+    public void setRoleDesc(String roleDesc) {
+        this.roleDesc = roleDesc;
+    }
+
+    @Override
+    public String toString() {
+        return "Role{" +
+                "roleId=" + roleId +
+                ", roleName='" + roleName + '\'' +
+                ", roleDesc='" + roleDesc + '\'' +
+                '}';
+    }
+}
+```
+```xml{.line-numbers}
+<!--定义role表的resultMap-->
+    <resultMap id="roleMap" type="role">
+        <id property="roleId" column="rid"></id>
+        <result property="roleName" column="role_name"></result>
+        <result property="roleDesc" column="role_desc"></result>
+        <collection property="users" ofType="user">
+            <id property="id" column="id"></id>
+            <result column="username" property="username"></result>
+            <result column="address" property="address"></result>
+            <result column="sex" property="sex"></result>
+            <result column="birthday" property="birthday"></result>
+        </collection>
+    </resultMap>
+    <!--查询所有-->
+    <select id="findAll" resultMap="roleMap">
+        select u.*,r.id as rid,r.role_name,r.role_desc from role r
+        left outer join user_role ur on r.id = ur.rid
+        left outer join user u on u.id = ur.uid
+    </select>
+```
+**实现一个用户查询多个角色**
+```java{.line-numbers}
+package com.xcq.domain;
+
+import java.io.Serializable;
+import java.sql.Date;
+import java.util.List;
+
+public class User implements Serializable {
+    private Integer id;
+    private String username;
+    private String address;
+    private String sex;
+    private Date birthday;
+
+    //多对多的关系映射，一个用户可以具备多个角色
+    private List<Role> roles;
+
+    public List<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getSex() {
+        return sex;
+    }
+
+    public void setSex(String sex) {
+        this.sex = sex;
+    }
+
+    public Date getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(Date birthday) {
+        this.birthday = birthday;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", address='" + address + '\'' +
+                ", sex='" + sex + '\'' +
+                ", birthday=" + birthday +
+                '}';
+    }
+}
+```
+```xml{.line-numbers}
+<resultMap id="userMap" type="user">
+        <id property="id" column="id"></id>
+        <result property="username" column="username"></result>
+        <result property="address" column="address"></result>
+        <result property="sex" column="sex"></result>
+        <result property="birthday" column="birthday"></result>
+        <!--配置角色集合的映射-->
+        <collection property="roles" ofType="role">
+            <id property="roleId" column="rid"></id>
+            <result property="roleName" column="role_name"></result>
+            <result property="roleDesc" column="role_desc"></result>
+        </collection>
+    </resultMap>
+    <select id="findAll" resultMap="userMap">
+        select u.*,r.id as rid,r.role_name,r.role_desc from user u
+        left outer join user_role ur on u.id = ur.uid
+        left outer join role r on r.id = ur.rid
+    </select>
+```
+#JDNI
+Java Naming And Directory Interface。目的是模仿windows系统中的注册表
+jndi是一个map结构，value是对应的对象，key存的是路径(directory)加名称(naming)。其中directory是固定的，name是自己指定的。要存放的对象也是可以指定的，是通过配置文件指定的
+从p60开始看
