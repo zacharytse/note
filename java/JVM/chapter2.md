@@ -89,4 +89,137 @@ HotSpot默认的分配顺序为longs/doubles、ints、shorts/chars、bytes/boole
 ## 对齐填充
 因为HotSpot要求对象的起始地址必须是8字节的整数倍，所以对象的大小也就必须是8的整数倍，如果对象大小不满足条件，就会通过对齐填充使其大小达到8的整数倍
 # 访问对象
-        ~
+java对象会通过栈上的reference数据来访问堆中的对象。具体的访问方式有使用句柄和直接指针两种
+- 句柄访问
+  java堆中会划出一块区域作为句柄池，reference中存储的是对象的句柄地址。句柄中包含了对象的实例数据和类型数据各自具体的地址。
+  ![](https://gitee.com/zacharytse/image/raw/master/img/20201029163907.png)
+- 直接指针访问
+  reference中存储的是对象的地址，但要考虑对象类型地址的存放。所以如果要访问对象类型的话，就需要一次间址的开支
+  ![](https://gitee.com/zacharytse/image/raw/master/img/20201029164413.png)
+**二者的比较**
+使用句柄访问，在对象被移动时，只需要改变句柄中对象实例数据的指针即可。
+使用直接指针访问，节省了一次指针定位的开销。
+# 内存溢出的实例
+## java堆溢出
+在测试时，要将堆的最小值与最大值设为一样，这样可以避免堆的自动扩展
+-XX:+HeapDumpOnOutOfMemoryError可以让虚拟机在出现内存溢出异常的时候，dump出当前的内存堆转储快照方便事后分析
+```java{.line-numbers}
+package com.xcq;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Main {
+    //-Xms20m -Xmx20m -XX:+HeapDumpOnOutOfMemoryError
+    static class OOMObject{
+
+    }
+    public static void main(String[] args) {
+	// write your code here
+        List<OOMObject> list = new ArrayList<>();
+        while(true){
+            list.add(new OOMObject());
+        }
+    }
+}
+```
+```
+java.lang.OutOfMemoryError: Java heap space
+Dumping heap to java_pid13000.hprof ...
+Heap dump file created [28172002 bytes in 0.494 secs]
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at java.util.Arrays.copyOf(Arrays.java:3210)
+	at java.util.Arrays.copyOf(Arrays.java:3181)
+	at java.util.ArrayList.grow(ArrayList.java:265)
+	at java.util.ArrayList.ensureExplicitCapacity(ArrayList.java:239)
+	at java.util.ArrayList.ensureCapacityInternal(ArrayList.java:231)
+	at java.util.ArrayList.add(ArrayList.java:462)
+	at com.xcq.Main.main(Main.java:14)
+```
+## 虚拟机栈和本地方法栈溢出
+存在两种异常
+1. 当线程请求的栈深度大于虚拟机所允许的最大深度，将抛出StackOverflowError异常
+2. 如果虚拟机的栈内存允许动态扩展，当扩展栈无法申请到足够的内存时，将抛出OutOfMemoryError异常
+对于第一种情况的测试
+```java{.line-numbers}
+package com.xcq;
+
+/**
+ * -Xss128k,限制栈容量
+ */
+public class JavaVMStackSOF {
+
+    private int stackLength = 1;
+
+    public void stackLeak(){
+        stackLength++;
+        stackLeak();
+    }
+    
+    public static void main(String[] args) {
+        JavaVMStackSOF stackSOF = new JavaVMStackSOF();
+        try {
+            stackSOF.stackLeak();
+        }catch (Throwable e){
+            System.out.println("stack length:" + stackSOF.stackLength);
+            throw e;
+        }
+    }
+}
+```
+```
+stack length:995
+Exception in thread "main" java.lang.StackOverflowError
+	at com.xcq.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:8)
+	at com.xcq.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:9)
+	at com.xcq.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:9)
+	at com.xcq.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:9)
+   .....
+```
+不停的创建线程，因为每一个线程都会有自己的栈空间，所以最终会因为线程数量过多，使得虚拟机栈没有足够的空间分配内存给线程的栈空间，会出现OutOfMemoryError。
+> 分配给线程的栈空间越大，这样可以创建的线程数也就越少，越容易出现OutOfMemoryError
+
+## 方法区和运行时常量池溢出
+字符串常量池溢出jdk7以后一般不太可能，因为jdk7以后，字符串常量池被挪到了堆中。
+方法区因为用来存储类名，访问修饰符，字段描述，方法描述，常量池等，所以如果产生了太多的类，就有可能造成方法区溢出。
+方法区的溢出一般是由于在运行时产生了大量动态类
+在jdk8之后，因为将永久代替换为了元空间，所以方法区也一般不会溢出了
+> 元空间不在虚拟机中，而是使用本地内存，因此默认情况下，元空间的大小仅受本地内存的限制
+
+> 为什么要将永久代从方法区挪到元空间中
+
+1. 字符串放在永久代，会有内存溢出以及性能问题
+2. 类以及方法的信息很难确定大小，所以对于永久代的大小指定很困难，太小，会造成永久代溢出，太大的话，可分配的堆空间就变少了，因此老年代可分配空间也会变少，最终可能会造成老年代的溢出
+3. 永久代中因为也存放了一些类的信息，GC时同样需要考虑，所以为GC带来了不必要的复杂度，并且回收效率偏低
+
+## 本机直接内存溢出
+指定直接内存容量的大小(-XX:MaxDirectMemorySize)。如果不指定的话，默认是和java堆的内存大小是一致的
+```java{.line-numbers}
+package com.xcq;
+
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
+
+/**
+ * -XX:MaxDirectMemorySize=10M -Xmx20M -XX:+HeapDumpOnOutOfMemoryError
+ */
+public class DirectMemoryOOM {
+
+    private static final int _1MB = 1024 * 1024;
+    public static void main(String[] args) throws IllegalAccessException {
+        Field unsafeField = Unsafe.class.getDeclaredFields()[0];
+        unsafeField.setAccessible(true);
+        Unsafe unsafe = (Unsafe) unsafeField.get(null);
+        while (true){
+            unsafe.allocateMemory(_1MB);
+        }
+    }
+}
+```
+```
+Exception in thread "main" java.lang.OutOfMemoryError
+	at sun.misc.Unsafe.allocateMemory(Native Method)
+	at com.xcq.DirectMemoryOOM.main(DirectMemoryOOM.java:15)
+```
+可以发现Heap dump文件没有异常情况。所以如果Heap dump没有什么问题，但程序又间接或直接使用了DirectMemory(例如NIO)，那就有可能是直接内存溢出
