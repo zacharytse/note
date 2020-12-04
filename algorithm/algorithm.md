@@ -3673,3 +3673,103 @@ class RandomizedCollection {
  * int param_3 = obj.getRandom();
  */
 ```
+# 分割数组为连续子序列
+## 题目
+给你一个按升序排序的整数数组 num（可能包含重复数字），请你将它们分割成一个或多个子序列，其中每个子序列都由连续整数组成且长度至少为 3 。
+
+如果可以完成上述分割，则返回 true ；否则，返回 false 。
+
+示例:
+```
+输入: [1,2,3,3,4,5]
+输出: True
+解释:
+你可以分割出这样两个连续子序列 : 
+1, 2, 3
+3, 4, 5
+```
+## 思路
+### 方法一
+hash+最小堆
+可以通过确定序列的长度以及序列的最后一位的数字x来确定整个序列，所以hash的key可以是这个数字x，value是一个最小堆，堆中存放着所有结尾为x的序列的长度。
+最后判断所有的子序列长度是否大于等于3，如果有小于3的序列，则说明不能分割
+```java{.line-numbers}
+class Solution {
+    public boolean isPossible(int[] nums) {
+        if(nums.length < 3) {
+            return false;
+        }
+        Map<Integer,PriorityQueue<Integer>> map = new HashMap<>();
+        for(int x : nums) {
+            if(!map.containsKey(x)) {
+                map.put(x,new PriorityQueue<Integer>());
+            }
+            if(map.containsKey(x-1)){
+                PriorityQueue<Integer> q = map.get(x-1);
+                int length = q.poll();
+                if(q.isEmpty()) {
+                    map.remove(x-1);
+                }
+                map.get(x).offer(length+1);
+            } else {
+                map.get(x).offer(1);
+            }
+        }
+        Set<Map.Entry<Integer,PriorityQueue<Integer>>> set = map.entrySet();
+        for(Map.Entry<Integer,PriorityQueue<Integer>> entry : set) {
+            if(entry.getValue().peek() < 3) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+```
+### 方法二
+贪心
+考虑使用两个hash表，其中一个表用来保存num数组中元素可以使用的次数，另一个hash表用来保存以x结尾的序列的数量。初始化时，第一个表初始化为元素的个数。
+遍历整个数组，分两种情况考虑
+- 当x-1在另一个hash表时，说明此时存在以x-1结尾的序列。此时把这个序列的数量减一，以x结尾的序列数量加一，并且减少第一个hash表中x的数量
+- 当x-1不在另一个hash表时，此时x必然是序列的开端，因为要保证序列的长度至少为3，所以x+1,x+2的可用数量必须大于0。如果不大于0，则说明无法分割，直接返回flase。此时应该构成了序列[x,x+1,x+2]，所以要把x，x+1,x+2的数量都分别减1，同时增加x+2结尾的序列数量
+
+最后如果没有出现不可分割的情况，则直接返回true
+
+```java{.line-numbers}
+class Solution {
+    public boolean isPossible(int[] nums) {
+        Map<Integer,Integer> counts = new HashMap<>();
+        Map<Integer,Integer> countMap = new HashMap<>();
+        for(int x : nums) {
+            int count = counts.getOrDefault(x,0) + 1;
+            counts.put(x,count); 
+        }
+        for(int x : nums) {
+            int count = counts.get(x);
+            if(count > 0) {
+                int prevEndCount = countMap.getOrDefault(x - 1,0);
+                if(prevEndCount > 0) {
+                    //x-1结尾的序列是存在的
+                    countMap.put(x-1,prevEndCount - 1);
+                    countMap.put(x,countMap.getOrDefault(x,0) + 1);
+                    counts.put(x,count - 1);
+                } else {
+                    //x-1结尾序列不存在
+                    int count1 = counts.getOrDefault(x + 1,0);
+                    int count2 = counts.getOrDefault(x + 2,0);
+                    if(count1 > 0 && count2 > 0) {
+                        countMap.put(x + 2,countMap.getOrDefault(x + 2,0) + 1);
+                        counts.put(x,count-1);
+                        counts.put(x + 1,count1-1);
+                        counts.put(x+2,count2-1);
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+         return true;
+    }
+}
+```
+
+
