@@ -3771,5 +3771,29 @@ class Solution {
     }
 }
 ```
-
-
+# 杨辉三角
+## 题目
+给定一个非负整数 numRows，生成杨辉三角的前 numRows 行。
+## 思路
+数学方法
+```java{.line-numbers}
+class Solution {
+    public List<List<Integer>> generate(int numRows) {
+        List<List<Integer>> ret = new ArrayList<>(numRows);
+        for(int i = 0; i < numRows; ++i) {
+            List<Integer> row = new ArrayList<>(i + 1);
+            for(int j = 0; j <= i ; ++j) {
+                if(j == 0 || j == i) {
+                    row.add(1);
+                } else {
+                    int left = ret.get(i - 1).get(j - 1);
+                    int right = ret.get(i - 1).get(j);
+                    row.add(left + right);
+                }
+            }
+            ret.add(row);
+        }
+        return ret;
+    }
+}
+```
