@@ -3797,3 +3797,77 @@ class Solution {
     }
 }
 ```
+# 翻转矩阵后的得分
+## 题目
+有一个二维矩阵 A 其中每个元素的值为 0 或 1 。
+
+移动是指选择任一行或列，并转换该行或列中的每一个值：将所有 0 都更改为 1，将所有 1 都更改为 0。
+
+在做出任意次数的移动后，将该矩阵的每一行都按照二进制数来解释，矩阵的得分就是这些数字的总和。
+
+返回尽可能高的分数。
+
+示例:
+```
+输入：[[0,0,1,1],[1,0,1,0],[1,1,0,0]]
+输出：39
+解释：
+转换为 [[1,1,1,1],[1,0,0,1],[1,1,1,1]]
+0b1111 + 0b1001 + 0b1111 = 15 + 9 + 15 = 39
+```
+## 思路
+贪心，先把最高列全部置为1，然后从第二列开始，如果该列0的个数超过了一半，则把该列取反
+```java{.line-numbers}
+class Solution {
+    public int matrixScore(int[][] A) {
+        int n = A.length , m = A[0].length;
+        //先把首行全部置为1
+        for(int row = 0; row < n; ++row) {
+            if(A[row][0] == 0) {
+                reverse(A,row,true);
+            }
+        }
+        //从第二列开始，如果1的个数小于0的个数，则翻转该列
+        for(int col = 1; col < m; ++col) {
+            int zeroCount = 0;
+            for(int row = 0; row < n; ++row) {
+                if(A[row][col] == 0) {
+                    ++zeroCount;
+                }
+            }
+            if(zeroCount >= (n + 1) / 2) {
+                reverse(A,col,false);
+            }
+        }
+        
+        int ret = 0;
+        for(int i = 0; i < n; ++i) {
+            ret += getScore(A[i]);
+        }
+        return ret;
+    }
+
+    private void reverse(int[][] A,int start,boolean isRow) {
+        if(isRow) {
+            int m = A[0].length;
+            for(int i = 0 ; i < m; ++i) {
+                A[start][i] = 1 - A[start][i];
+            }
+        } else {
+            int n = A.length;
+            for(int i = 0; i < n; ++i) {
+                A[i][start] = 1 - A[i][start];
+            }
+        }
+    }
+
+    private int getScore(int[] num) {
+        int n = num.length;
+        int ret = 0;
+        for(int i = 0; i < n; ++i) {
+            ret += (num[i] << (n - i - 1));
+        }
+        return ret;
+    }
+}
+```
