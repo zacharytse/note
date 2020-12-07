@@ -302,3 +302,21 @@ public class TestQueryImpl implements IDocumentQuery {
 - 输入搜索语句后，还没有对该语句做关键词的提取，目前是把整个搜索语句当作完整的词语去进行匹配。
 - 没有加入索引的更新，删除(IndexUpdate,IndexDelete)
 - 没有加入缓存模块(最好也是弄成可扩展的搜索缓存,即可以扩展成各种各样的缓存)
+
+# 评论模块
+![](https://gitee.com/zacharytse/image/raw/master/img/20201206213642.png)
+## 数据库创建
+comment表结构如下
+![](https://gitee.com/zacharytse/image/raw/master/img/20201206204809.png)
+
+在更新用户名时，通过触发器对comment表中的targetName进行更新，更新代码如下
+```sql
+use blog;
+delimiter //
+DROP TRIGGER IF EXISTS `updateUsername`//
+CREATE TRIGGER `updateUsername` AFTER UPDATE ON `users`
+FOR EACH ROW BEGIN
+UPDATE `comment` SET `comment`.`targetName` = NEW.`username` WHERE  `comment`.`targetId` = OLD.`id`;
+END
+//
+```
