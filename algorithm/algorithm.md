@@ -3871,3 +3871,67 @@ class Solution {
     }
 }
 ```
+# 将数组拆分成斐波那契序列
+## 题目
+给定一个数字字符串 S，比如 S = "123456579"，我们可以将它分成斐波那契式的序列 [123, 456, 579]。
+
+形式上，斐波那契式序列是一个非负整数列表 F，且满足：
+
+0 <= F[i] <= 2^31 - 1，（也就是说，每个整数都符合 32 位有符号整数类型）；
+F.length >= 3；
+对于所有的0 <= i < F.length - 2，都有 F[i] + F[i+1] = F[i+2] 成立。
+另外，请注意，将字符串拆分成小块时，每个块的数字一定不要以零开头，除非这个块是数字 0 本身。
+
+返回从 S 拆分出来的任意一组斐波那契式的序列块，如果不能拆分则返回 []。
+
+示例：
+```
+输入："123456579"
+输出：[123,456,579]
+```
+## 思路
+采取回溯加剪枝的方法。每次形成一个新的数字，然后将新的数字加入到队列中。剪枝策略如下:
+- 如果当前串的开头已经为0，但该串的长度不为1，则可以直接返回false(不能以0开头)
+- 如果该串表示的数字已经超过了int的范围，则直接返回false
+- 如果答案列表中已经有两个或两个以上的数了，如果当前数比前面2个数的和还要大，也要直接剪枝
+
+```java{.line-numbers}
+class Solution {
+    public List<Integer> splitIntoFibonacci(String S) {
+        List<Integer> ans = new ArrayList<>();
+        backtrack(S,ans,0,0,0);
+        return ans;
+    }
+
+    private boolean backtrack(String s,List<Integer> ans,int index,int sum,int prev) {
+        if(index >= s.length()) {
+            return ans.size() >= 3;
+        }
+        long curr = 0l;
+        for(int i = index; i < s.length();++i){
+            if(i > index && s.charAt(index) == '0') {
+                break;
+            }
+            curr = curr * 10 + (s.charAt(i) - '0');
+            if(curr > Integer.MAX_VALUE) {
+                break;
+            }
+            int cur = (int) curr;
+            if(ans.size() >= 2) {
+                if(cur < sum) {
+                    continue;
+                } else if(cur > sum) {
+                    break;
+                }
+            }
+            ans.add(cur);
+            if(backtrack(s,ans,i + 1,prev + cur,cur)) {
+                return true;
+            } else {
+                ans.remove(ans.size() - 1);
+            }
+        } 
+        return false;
+    }
+}
+```
