@@ -4153,3 +4153,99 @@ class Solution {
     }
 }
 ```
+# 摆动序列
+## 题目
+如果连续数字之间的差严格地在正数和负数之间交替，则数字序列称为摆动序列。第一个差（如果存在的话）可能是正数或负数。少于两个元素的序列也是摆动序列。
+
+例如， [1,7,4,9,2,5] 是一个摆动序列，因为差值 (6,-3,5,-7,3) 是正负交替出现的。相反, [1,4,7,2,5] 和 [1,7,4,5,5] 不是摆动序列，第一个序列是因为它的前两个差值都是正数，第二个序列是因为它的最后一个差值为零。
+
+给定一个整数序列，返回作为摆动序列的最长子序列的长度。 通过从原始序列中删除一些（也可以不删除）元素来获得子序列，剩下的元素保持其原始顺序。
+
+示例:
+```
+输入: [1,7,4,9,2,5]
+输出: 6 
+解释: 整个序列均为摆动序列。
+```
+## 思路
+### 动态规划
+定义上升摆动序列为最后一个数字是大于倒数第二个数字的摆动序列，定义下降摆动序列为最后一个数字小于倒数第二个数字的摆动序列。定义两个数组up,down分别表示到i为止，上升摆动序列的最大长度和下降摆动序列的最大长度。
+
+先考虑up[i]的情况
+- 当nums[i] <= nums[i - 1]时，此时up[i] = up[i - 1]
+- 当nums[i] > nums[i - 1]时，up[i-1]可以直接转移到up[i]。对于下降摆动序列，可以直接把nums[i]加入进去，变为上升摆动序列，所以up[i] = max{up[i - 1],down[i - 1] + 1}
+
+down[i]和up[i]是镜像问题
+
+综上，状态转移方程为:
+![](https://gitee.com/zacharytse/image/raw/master/img/20201212103655.png)
+
+```java{.line-numbers}
+class Solution {
+    public int wiggleMaxLength(int[] nums) {
+        int n = nums.length;
+        if(n  < 2) {
+            return n;
+        }
+        int[] up = new int[n];
+        int[] down = new int[n];
+        up[0] = down[0] = 1;
+        for(int i = 1; i < n; ++i) {
+            if(nums[i] == nums[i - 1]) {
+                up[i] = up[i - 1];
+                down[i] = down[i - 1];
+            } else if(nums[i] > nums[i - 1]) {
+                up[i] = Math.max(up[i - 1],down[i - 1] + 1);
+                down[i] = down[i - 1];
+            } else {
+                up[i] = up[i - 1];
+                down[i] = Math.max(down[i - 1],up[i - 1] + 1);
+            }
+        }
+        return Math.max(up[n - 1],down[n - 1]);
+    }
+}
+```
+**优化**
+因为每次只用到前面一个的状态，所以可以把up和down只用一个变量来表示
+```java{.line-numbers}
+class Solution {
+    public int wiggleMaxLength(int[] nums) {
+        int n = nums.length;
+        if(n  < 2) {
+            return n;
+        }
+        int up = 1, down = 1;
+        for(int i = 1; i < n; ++i) {
+            if(nums[i] > nums[i - 1]) {
+                up = Math.max(up,down + 1);
+            } else if(nums[i] < nums[i - 1]) {
+                down = Math.max(down,up + 1);
+            }
+        }
+        return Math.max(up,down);
+    }
+}
+```
+### 方法三
+贪心，可以贪心的认为峰或者谷的元素一定在最长的摇摆序列中。如果存在一个不是峰或者谷的过渡元素在摇摆序列中，则它所在的上升区间所对应的峰或者所在的下降区间所对应的谷也同样可以放到摇摆序列中，因此没有必要放一个过渡元素在最长的摇摆序列中。
+```java{.line-numbers}
+class Solution {
+    public int wiggleMaxLength(int[] nums) {
+        int n = nums.length;
+        if(n < 2) {
+            return n;
+        }
+        int prediff = nums[1] - nums[0];
+        int ret = prediff != 0 ? 2 : 1;
+        for(int i = 2; i < n; ++i) {
+            int diff = nums[i] - nums[i - 1];
+            if((diff > 0 && prediff <= 0) || (diff < 0 && prediff >= 0)) {
+                ++ret;
+                prediff = diff;
+            }
+        }
+        return ret;
+    }
+}
+```
