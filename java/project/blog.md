@@ -320,3 +320,5 @@ UPDATE `comment` SET `comment`.`targetName` = NEW.`username` WHERE  `comment`.`t
 END
 //
 ```
+# 服务注册和网关
+所有的服务都注册到了eureka上。因为前端在访问这些服务时会存在跨域的问题。为了解决跨域问题，使用了gateway组件，所有的请求都会由gateway组件转发。接着在gateway上统一配置response的http报文头，以此来解决跨域问题
